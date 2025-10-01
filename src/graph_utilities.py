@@ -74,3 +74,19 @@ def create_relationships(
         rows.append({"node1": node1_ids, "node2": node2_ids, "attrs": attrs})
 
     graph.run(query, rows=rows)
+
+def ensure_unique_constraint(graph, label, fields):
+
+    if not fields:
+        raise ValueError("Musisz podać przynajmniej jedno pole")
+
+    constraint_name = f"{label.lower()}_{'_'.join(fields)}_uniq"
+
+    fields_str = "(" + ", ".join([f"n.{f}" for f in fields]) + ")"
+
+    query = f"""
+    CREATE CONSTRAINT {constraint_name} IF NOT EXISTS
+    FOR (n:{label}) REQUIRE {fields_str} IS UNIQUE
+    """
+
+    graph.run(query)
