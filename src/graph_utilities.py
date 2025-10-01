@@ -31,13 +31,12 @@ def create_nodes(graph, df, node_type, id_fields, name_field, exclude_attrs):
     for _, r in df.iterrows():
         ids = {k: v for k, v in dict(r).items() if k in id_fields}
 
-        if not check_node_exists(graph, node_type, ids):
-            attrs = {k: v for k, v in dict(r).items() if k not in exclude_attrs}
-            attrs.update(ids)
-            n = Node(node_type, name=r[name_field], **attrs)
-            tx.create(n)
+        attrs = {k: v for k, v in dict(r).items() if k not in exclude_attrs}
+        attrs.update(ids)
+        n = Node(node_type, name=r[name_field], **attrs)
+        tx.create(n)
             
-            cached_nodes[(ids.get(id_field) for id_field in id_fields)] = n
+        cached_nodes[(ids.get(id_field) for id_field in id_fields)] = n
 
     graph.commit(tx)
     return cached_nodes
@@ -68,16 +67,7 @@ def create_relationships(
         node1 = graph.nodes.match(node1_type, **node1_ids).first()
         node2 = graph.nodes.match(node2_type, **node2_ids).first()
 
-        exists = check_rel_exists(
-            graph=graph,
-            r_type=r_type,
-            node1_type=node1_type,
-            node2_type=node2_type,
-            node1_ids=node1_ids,
-            node2_ids=node2_ids,
-        )
-
-        if node1 and node2 and not exists:
+        if node1 and node2:
             attrs = {k: v for k, v in row_dict.items() if k not in exclude_fields}
             rel = Relationship(node1, r_type, node2, **attrs)
             tx.create(rel)
