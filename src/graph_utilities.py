@@ -56,20 +56,21 @@ def create_relationships(
     if exclude_fields is None:
         exclude_fields = []
 
-    tx = graph.begin()
+    query = f"""
+        UNWIND $rows AS row
+        MATCH (a:{node1_type}), (b:{node2_type})
+        WHERE """ + " AND ".join([f"a.{k} = row.node1.{k}" for k in node1_id_fields]) + """
+        AND """ + " AND ".join([f"b.{k} = row.node2.{k}" for k in node2_id_fields]) + f"""
+        MERGE (a)-[r:{r_type}]->(b)
+        SET r += row.attrs
+        """
 
+    rows = []
     for _, r in df.iterrows():
         row_dict = dict(r)
+        node1_ids = {k: row_dict[k] for k in node1_id_fields}
+        node2_ids = {k: row_dict[k] for k in node2_id_fields}
+        attrs = {k: v for k, v in row_dict.items() if k not in (node1_id_fields + node2_id_fields)}
+        rows.append({"node1": node1_ids, "node2": node2_ids, "attrs": attrs})
 
-        node1_ids = {k: v for k, v in row_dict.items() if k in node1_id_fields}
-        node2_ids = {k: v for k, v in row_dict.items() if k in node2_id_fields}
-
-        node1 = graph.nodes.match(node1_type, **node1_ids).first()
-        node2 = graph.nodes.match(node2_type, **node2_ids).first()
-
-        if node1 and node2:
-            attrs = {k: v for k, v in row_dict.items() if k not in exclude_fields}
-            rel = Relationship(node1, r_type, node2, **attrs)
-            tx.create(rel)
-
-    graph.commit(tx)
+    graph.run(query, rows=rows)
