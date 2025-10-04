@@ -17,6 +17,8 @@ nbformat = "^5.10.4"
 dotenv = "^0.9.9"
 py2neo = "^2021.2.4"
 networkx = "^3.5"
+openai = "^2.1.0"
+langchain = "^0.3.27"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
