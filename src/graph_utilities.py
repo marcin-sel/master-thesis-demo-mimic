@@ -50,11 +50,8 @@ def create_relationships(
     node1_id_fields,
     node2_id_fields,
     r_type,
-    exclude_fields=None,
+    attrs_fields = [],
 ):
-
-    if exclude_fields is None:
-        exclude_fields = []
 
     query = f"""
         UNWIND $rows AS row
@@ -70,7 +67,7 @@ def create_relationships(
         row_dict = dict(r)
         node1_ids = {k: row_dict[k] for k in node1_id_fields}
         node2_ids = {k: row_dict[k] for k in node2_id_fields}
-        attrs = {k: v for k, v in row_dict.items() if k not in (node1_id_fields + node2_id_fields)}
+        attrs = {k: v for k, v in row_dict.items() if k in attrs_fields}
         rows.append({"node1": node1_ids, "node2": node2_ids, "attrs": attrs})
 
     graph.run(query, rows=rows)
@@ -90,3 +87,4 @@ def ensure_unique_constraint(graph, label, fields):
     """
 
     graph.run(query)
+
